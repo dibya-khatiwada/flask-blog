@@ -11,14 +11,13 @@ app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://postgres:admin@localhost/f
 app.config['SECRET_KEY'] = "mysecretkeywhichisnotsecretrightnow"
 db=SQLAlchemy(app)
 admin = Admin(app)
-Ckeditor = CKEditor(app)
 
 class Posts(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100))
     subtitle=db.Column(db.String(100))
     author = db.Column(db.String(30))
-    content=db.Column(db.Text(500))
+    content=db.Column(db.Text)
     date_posted = db.Column(db.DateTime)
     slug = db.Column(db.String(100))
 
@@ -33,6 +32,12 @@ class Users(db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
+class Message(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100))
+    email = db.Column(db.String(100))
+    phone = db.Column(db.String(20))
+    message = db.Column(db.Text)
 
 
 class SecureModelView(ModelView):
@@ -44,6 +49,7 @@ class SecureModelView(ModelView):
 
 admin.add_view(SecureModelView(Posts, db.session))
 admin.add_view(SecureModelView(Users, db.session))
+admin.add_view(SecureModelView(Message, db.session))
 
 @app.route('/')
 def hello():
@@ -63,8 +69,21 @@ def post(slug):
         abort(404)
 
 
-@app.route('/contact')
+@app.route('/contact', methods=['GET','POST'])
 def contact():
+    if request.method == 'POST':
+        name = request.form.get('name')
+        phone = request.form.get('name')
+        email = request.form.get('name')
+        message = request.form.get('name')
+
+        msg=Message(name=name, phone=phone, email=email, message=message)
+
+        db.session.add(msg)
+        db.session.commit()
+
+        return render_template('contact.html', success=True)
+
     return render_template('contact.html')
 
 
@@ -74,10 +93,13 @@ def login():
         username = request.form.get('username')
         password = request.form.get('password')
         user_data = Users.query.filter_by(username=username).first()
-        if user_data != None and user_data.check_password(password):
+        if user_data.check_password(password):
+            print(True)
+            session['logged_in'] = True
             return redirect('/admin')
-            session.logged_in = True
+            
         else:
+            return render_template('login.html', failed=True)
             abort(403)
 
     return render_template("login.html")
