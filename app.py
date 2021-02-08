@@ -9,6 +9,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://postgres:admin@localhost/flask_blog"
 app.config['SECRET_KEY'] = "mysecretkeywhichisnotsecretrightnow"
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db=SQLAlchemy(app)
 admin = Admin(app)
 
